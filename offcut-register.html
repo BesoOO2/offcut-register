@@ -1,0 +1,1344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f1f3f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131614" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Offcuts">
+<title>Offcut Register</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b6545'/%3E%3Crect x='12' y='16' width='40' height='9' rx='2' fill='%23fff'/%3E%3Crect x='12' y='29' width='28' height='9' rx='2' fill='%23fff'/%3E%3Crect x='12' y='42' width='18' height='9' rx='2' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one working column. Sticky header with sync button and view tabs, pencil-stamp IDs on list rows, bottom sheet for piece actions. */
+:root{
+  --bg:#f1f3f0; --surface:#ffffff; --ink:#1b201c; --muted:#5d6660; --line:#d6dbd5; --line-strong:#b9c1ba;
+  --accent:#2b6545; --accent-ink:#ffffff; --accent-soft:#dfeae2;
+  --amber:#8f5410; --amber-soft:#f5e7d3;
+  --danger:#a1342a; --danger-soft:#f4dfdb;
+  --scrim:rgba(18,22,19,.48); --shadow:0 12px 32px rgba(18,28,22,.20);
+  --f-stamp:"Barlow Condensed","Arial Narrow","Roboto Condensed",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131614; --surface:#1b1f1c; --ink:#e4e8e4; --muted:#99a29b; --line:#2c332e; --line-strong:#424b45;
+    --accent:#7dbd96; --accent-ink:#0e1a12; --accent-soft:#213328;
+    --amber:#e2a45e; --amber-soft:#3a2c1b;
+    --danger:#ec8a7e; --danger-soft:#3c2220;
+    --scrim:rgba(0,0,0,.6); --shadow:0 12px 32px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131614; --surface:#1b1f1c; --ink:#e4e8e4; --muted:#99a29b; --line:#2c332e; --line-strong:#424b45;
+  --accent:#7dbd96; --accent-ink:#0e1a12; --accent-soft:#213328;
+  --amber:#e2a45e; --amber-soft:#3a2c1b;
+  --danger:#ec8a7e; --danger-soft:#3c2220;
+  --scrim:rgba(0,0,0,.6); --shadow:0 12px 32px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom,0px)}
+body.locked{overflow:hidden}
+button{font:inherit;color:inherit}
+a{color:var(--accent)}
+.wrap{max-width:860px;margin:0 auto;padding-inline:max(16px, env(safe-area-inset-left,0px));padding-block:0 120px}
+
+/* header */
+.top{position:sticky;top:0;z-index:20;background:var(--bg);padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:10px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand h1{margin:0;font-family:var(--f-stamp);font-weight:700;font-size:28px;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+.statline{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.statline p{margin:0}
+.statline b{color:var(--ink);font-weight:600}
+.syncbtn{appearance:none;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-weight:600;font-size:15px;border-radius:999px;padding:7px 14px;min-height:40px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap}
+.syncbtn.has-changes{background:var(--accent);color:var(--accent-ink)}
+.syncbtn:disabled{opacity:.6;cursor:progress}
+.badge{min-width:22px;height:22px;border-radius:999px;padding:0 6px;display:inline-grid;place-items:center;font-size:13px;font-weight:700;background:var(--accent-ink);color:var(--accent);font-variant-numeric:tabular-nums}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--line);padding:4px;border-radius:12px}
+.tabs button{appearance:none;border:0;background:transparent;border-radius:9px;padding:9px 6px;font-weight:600;font-size:15px;cursor:pointer;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.notice{margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--amber-soft);color:var(--ink);font-size:15px}
+section.view{display:grid;gap:14px;padding-top:14px}
+
+/* controls */
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:9px;padding:10px 12px;width:100%;min-height:46px;min-width:0}
+textarea{min-height:110px;resize:vertical;font-size:14px;font-variant-numeric:tabular-nums}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.btn{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:600;font-size:16px;line-height:1.1;padding:12px 16px;border-radius:10px;min-height:48px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-align:center}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.danger.solid{background:var(--danger);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{min-height:38px;padding:8px 12px;font-size:15px}
+.link{appearance:none;border:0;background:none;color:var(--accent);font-weight:600;padding:8px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);border-radius:999px;padding:7px 13px;min-height:38px;font-weight:500;font-size:15px;cursor:pointer;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip .x{font-size:18px;line-height:1;color:var(--muted);margin-right:-4px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.lbl{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field{display:block;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+
+/* find */
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filter-row select{width:auto;flex:1 1 140px}
+.sizebox{display:grid;gap:8px;padding:12px;border:1px dashed var(--line-strong);border-radius:10px}
+.sizebox p{margin:0;font-size:14px;color:var(--muted)}
+.info{margin:0;font-size:14px;color:var(--muted)}
+.err{margin:0;font-size:14px;color:var(--danger)}
+.list{display:grid;gap:8px}
+.row{appearance:none;width:100%;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"id pill" "dims dims" "meta meta";gap:2px 10px;align-items:center}
+.row:hover{border-color:var(--line-strong)}
+.row.exact{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.row.is-used .id,.row.is-used .dims{color:var(--muted)}
+.row .id{grid-area:id}
+.row .pill{grid-area:pill}
+.row .dims{grid-area:dims}
+.row .meta{grid-area:meta}
+.id{font-family:var(--f-stamp);font-weight:600;font-size:23px;letter-spacing:.03em;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.id .pre{color:var(--muted);font-weight:500}
+.dims{font-variant-numeric:tabular-nums;font-weight:500;font-size:16px}
+.dims .u{color:var(--muted);font-size:14px;font-weight:400}
+.meta{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.pill{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px;white-space:nowrap;justify-self:end}
+.pill.available{background:var(--accent-soft);color:var(--accent)}
+.pill.reserved{background:var(--amber-soft);color:var(--amber)}
+.pill.used{background:var(--line);color:var(--muted)}
+.empty{padding:22px 18px;border:1px dashed var(--line-strong);border-radius:12px;display:grid;gap:10px}
+.empty h2{margin:0;font-size:20px;font-weight:600;text-wrap:balance}
+.empty p{margin:0;color:var(--muted);max-width:60ch}
+.empty .btns{display:flex;flex-wrap:wrap;gap:8px}
+.stamp-eg{font-family:var(--f-stamp);font-weight:600;font-size:19px;letter-spacing:.03em;color:var(--ink)}
+.clash{padding:14px 16px;border-radius:12px;background:var(--amber-soft);display:grid;gap:8px}
+.clash p{margin:0}
+.clash ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.clash li{font-family:var(--f-stamp);font-size:21px;font-weight:600;letter-spacing:.03em}
+
+/* add */
+.addform{display:grid;gap:14px}
+.addbar{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;align-items:end;padding-top:6px;border-top:1px solid var(--line)}
+.addbar .btn{grid-column:1 / -1}
+.preview .id{font-size:26px;display:block;padding-block:6px}
+.done{padding:14px 16px;border-radius:12px;background:var(--accent-soft);display:grid;gap:6px}
+.done .lbl{color:var(--accent);margin:0}
+.done .ids{display:flex;flex-wrap:wrap;gap:4px 16px}
+.done .ids .id{font-size:32px}
+.sub{margin:6px 0 0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* settings */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
+.card h2{margin:0;font-size:18px;font-weight:600}
+.card p{margin:0;color:var(--muted);font-size:15px;max-width:65ch}
+.card ol{margin:0;padding-left:22px;display:grid;gap:6px;font-size:15px;max-width:65ch}
+.mlist{display:grid;gap:6px}
+.mrow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;padding-block:4px;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:0}
+.mrow .id{font-size:21px}
+.addrow{display:flex;flex-wrap:wrap;gap:8px}
+.addrow input,.addrow select{flex:1 1 120px;width:auto}
+.addrow .code{flex:0 1 90px;text-transform:uppercase}
+.rule{display:grid;gap:4px;font-size:15px}
+.rule div{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.importmsg{font-size:15px;display:grid;gap:4px}
+.importmsg p{margin:0}
+.importmsg ul{margin:0;padding-left:20px;color:var(--danger)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:15px;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow);display:grid;gap:14px}
+@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:18px;padding-bottom:20px}}
+.sh-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center}
+.sh-head h2{margin:0}
+.sh-head .id{font-size:34px}
+.xbtn{appearance:none;border:1px solid var(--line);background:var(--surface);width:42px;height:42px;border-radius:999px;font-size:22px;line-height:1;cursor:pointer;color:var(--muted)}
+.bigdims{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin:0}
+.bigdims .u{color:var(--muted);font-size:16px;font-weight:400}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 16px;margin:0;font-size:15px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;overflow-wrap:anywhere}
+.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.actions .btn{min-height:56px;font-size:17px}
+.sh-title{margin:0;font-size:20px;font-weight:600}
+.sh-note{margin:0;color:var(--muted);font-size:15px}
+.sh-form{display:grid;gap:12px}
+.sh-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.confirm{padding:12px 14px;border-radius:10px;background:var(--danger-soft);display:grid;gap:10px}
+.confirm p{margin:0}
+
+/* toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 10px 10px 16px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);width:max-content;box-shadow:var(--shadow);font-size:15px}
+.toast button{appearance:none;border:0;background:transparent;color:var(--bg);font-weight:700;text-decoration:underline;text-underline-offset:3px;padding:8px 10px;cursor:pointer;min-height:40px}
+@media (prefers-reduced-motion:no-preference){
+  .sheet{animation:up .18s ease-out}
+  @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Offcut Register</h1>
+      <button id="syncBtn" class="syncbtn" type="button"><span id="syncLbl">Sync</span><span id="syncBadge" class="badge" hidden>0</span></button>
+    </div>
+    <div class="statline"><p id="counts"></p><p id="syncInfo"></p></div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button id="tab-find" role="tab" data-view="find" aria-selected="true">Find</button>
+      <button id="tab-add" role="tab" data-view="add" aria-selected="false">Add</button>
+      <button id="tab-settings" role="tab" data-view="settings" aria-selected="false">Settings</button>
+    </nav>
+  </header>
+
+  <div id="notice" class="notice" hidden></div>
+
+  <!-- FIND -->
+  <section id="v-find" class="view" role="tabpanel" aria-labelledby="tab-find">
+    <div id="clashBox" class="clash" hidden></div>
+    <input id="q" type="search" placeholder="Piece number, ID, location, project" autocomplete="off" enterkeyhint="go" aria-label="Search pieces">
+    <div id="matChips" class="chips" aria-label="Material"></div>
+    <div class="filter-row">
+      <select id="fStatus" aria-label="Status">
+        <option value="stock">In stock</option>
+        <option value="available">Available</option>
+        <option value="reserved">Reserved</option>
+        <option value="used">Used</option>
+        <option value="all">All pieces</option>
+      </select>
+      <select id="fSort" aria-label="Sort">
+        <option value="seq">Sort by number</option>
+        <option value="long">Longest first</option>
+        <option value="new">Newest first</option>
+      </select>
+      <button id="sizeToggle" class="chip" type="button" aria-expanded="false" aria-controls="sizeBox">Minimum size</button>
+    </div>
+    <div id="sizeBox" class="sizebox" hidden>
+      <p>Show pieces at least this big. Width and thickness work in either orientation.</p>
+      <div class="grid3">
+        <label class="field" for="minL"><span class="lbl">Length mm</span><input id="minL" inputmode="decimal" placeholder="e.g. 400"></label>
+        <label class="field" for="minW"><span class="lbl">Width mm</span><input id="minW" inputmode="decimal" placeholder="e.g. 90"></label>
+        <label class="field" for="minT"><span class="lbl">Thick mm</span><input id="minT" inputmode="decimal" placeholder="e.g. 19"></label>
+      </div>
+      <div><button id="sizeClear" class="link" type="button">Clear size</button></div>
+    </div>
+    <p id="resultInfo" class="info"></p>
+    <div id="list" class="list"></div>
+  </section>
+
+  <!-- ADD -->
+  <section id="v-add" class="view" role="tabpanel" aria-labelledby="tab-add" hidden>
+    <form id="addForm" class="addform" novalidate>
+      <div class="field"><span class="lbl">Material</span><div id="aMat" class="chips"></div></div>
+      <div class="field"><span id="aPresetLbl" class="lbl">Section</span><div id="aPresets" class="chips"></div></div>
+      <div class="grid3">
+        <label class="field" for="aL"><span class="lbl">Length mm</span><input id="aL" inputmode="decimal" autocomplete="off"></label>
+        <label class="field" for="aW"><span class="lbl">Width mm</span><input id="aW" inputmode="decimal" autocomplete="off"></label>
+        <label class="field" for="aT"><span class="lbl">Thick mm</span><input id="aT" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="lbl">Treatment</span><div id="aTreat" class="seg"></div></div>
+        <div class="field"><span class="lbl">Finish</span><div id="aFinish" class="seg"></div></div>
+      </div>
+      <div class="grid2">
+        <label class="field" for="aLoc"><span class="lbl">Location</span><input id="aLoc" list="dlLoc" autocomplete="off" placeholder="e.g. Rack 1"></label>
+        <label class="field" for="aProj"><span class="lbl">Source project</span><input id="aProj" list="dlProj" autocomplete="off" placeholder="e.g. Deck steps"></label>
+      </div>
+      <label class="field" for="aNotes"><span class="lbl">Notes</span><input id="aNotes" autocomplete="off" placeholder="Defects, figure, knots"></label>
+      <div class="addbar">
+        <label class="field" for="aQty"><span class="lbl">Qty</span><input id="aQty" inputmode="numeric" value="1" autocomplete="off"></label>
+        <div class="preview"><span class="lbl">Next ID</span><span id="aPreview" class="id">–</span></div>
+        <button id="aSave" class="btn primary" type="submit">Add piece</button>
+      </div>
+      <p id="aErr" class="err" hidden></p>
+    </form>
+    <div id="aDone" class="done" hidden></div>
+    <div id="aRecentWrap" hidden>
+      <p class="sub">Added this visit</p>
+      <div id="aRecent" class="list" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="v-settings" class="view" role="tabpanel" aria-labelledby="tab-settings" hidden>
+    <div class="card" id="syncCard">
+      <h2>Sync</h2>
+      <div id="syncSetup" class="card" style="border:0;padding:0">
+        <p>Your register is saved on this device. Sync keeps a copy in a secret GitHub gist so your PC and phone match. Set it up once on each device with the same token.</p>
+        <ol>
+          <li>On GitHub, go to Settings › Developer settings › Personal access tokens › Tokens (classic).</li>
+          <li>Generate a new classic token. Tick only <b>gist</b> and set expiration to <b>No expiration</b>.</li>
+          <li>Copy the token, paste it below and press Connect.</li>
+        </ol>
+        <form id="tokForm" class="addrow" novalidate>
+          <input id="tokIn" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_…" aria-label="GitHub token">
+          <button class="btn primary small" type="submit">Connect</button>
+        </form>
+        <p id="tokErr" class="err" hidden></p>
+      </div>
+      <div id="syncOn" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>How IDs work</h2>
+      <div class="rule">
+        <div><span class="stamp-eg">PIN-19-023</span><span class="meta">Planks and sheets under 30 mm thick use the thickness.</span></div>
+        <div><span class="stamp-eg">PIN-90-021</span><span class="meta">Beams 30 mm or thicker use the height (90 of a 90×45).</span></div>
+      </div>
+      <p>The last part is the piece number. It is unique across all materials, so typing 21 in Find goes straight to that piece. Cutting a piece keeps its ID. Ripping makes new pieces with new numbers and marks the original used.</p>
+    </div>
+
+    <div class="card">
+      <h2>Materials</h2>
+      <div id="sMat" class="mlist"></div>
+      <form id="sMatForm" class="addrow" novalidate>
+        <input id="sMatCode" class="code" maxlength="4" placeholder="Code" aria-label="Material code" autocomplete="off">
+        <input id="sMatName" placeholder="Name" aria-label="Material name" autocomplete="off">
+        <select id="sMatKind" aria-label="Kind">
+          <option value="solid">Solid timber</option>
+          <option value="sheet">Sheet</option>
+        </select>
+        <button class="btn small" type="submit">Add material</button>
+      </form>
+      <p id="sMatErr" class="err" hidden></p>
+    </div>
+
+    <div class="card">
+      <h2>Beam and plank sizes</h2>
+      <p>Width × thickness presets shown when adding solid timber.</p>
+      <div id="sSec" class="chips"></div>
+      <form id="sSecForm" class="addrow" novalidate>
+        <input id="sSecIn" placeholder="e.g. 240x45" aria-label="New size" autocomplete="off">
+        <button class="btn small" type="submit">Add size</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Sheet thicknesses</h2>
+      <div id="sThk" class="chips"></div>
+      <form id="sThkForm" class="addrow" novalidate>
+        <input id="sThkIn" inputmode="decimal" placeholder="e.g. 25" aria-label="New sheet thickness" autocomplete="off">
+        <button class="btn small" type="submit">Add thickness</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Locations</h2>
+      <p>Suggested when adding pieces. Any location you type is also remembered.</p>
+      <div id="sLoc" class="chips"></div>
+      <form id="sLocForm" class="addrow" novalidate>
+        <input id="sLocIn" placeholder="e.g. Rack 1, Bin 3" aria-label="New location" autocomplete="off">
+        <button class="btn small" type="submit">Add location</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Export</h2>
+      <p>Download every piece as a CSV. With no pieces registered it gives you an empty template with the right columns.</p>
+      <div class="btnrow"><button id="exportBtn" class="btn" type="button">Download CSV</button><button id="copyBtn" class="btn" type="button">Copy CSV</button></div>
+      <textarea id="exportText" readonly aria-label="CSV text" hidden></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Import</h2>
+      <p>Columns needed: material, length, width, thickness. Optional: treatment, finish, location, project, notes, status, added. Rows without a seq get new numbers. Rows with a seq replace that piece. You can paste straight from a spreadsheet.</p>
+      <input id="importFile" type="file" accept=".csv,.tsv,.txt,text/csv" aria-label="Choose CSV file">
+      <textarea id="importText" placeholder="material,length,width,thickness,treatment,location,project&#10;PIN,850,90,45,H3.2,Rack 1,Deck steps&#10;PLY,600,400,18,Untreated,Sheet slot,Shelving"></textarea>
+      <div class="btnrow"><button id="importCheck" class="btn small" type="button">Check rows</button></div>
+      <div id="importMsg" class="importmsg" hidden></div>
+    </div>
+  </section>
+</div>
+
+<datalist id="dlLoc"></datalist>
+<datalist id="dlProj"></datalist>
+<div id="sheetHost"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- constants ---------- */
+const LS_KEY = "offcutRegister.v1";
+const GIST_FILE = "offcut-register.json";
+const GH = "https://api.github.com";
+const DEFAULTS = {
+  materials: [
+    {code:"PIN", name:"Pine", kind:"solid"},
+    {code:"PLY", name:"Plywood", kind:"sheet"},
+    {code:"MDF", name:"MDF", kind:"sheet"}
+  ],
+  sections: ["70x45","90x45","140x45","190x45","200x50","42x19","90x19","140x19","190x19"],
+  sheetThk: [4.75, 6, 9, 12, 18],
+  locations: []
+};
+const TREAT = ["Untreated","H1.2","H3.2"];
+const FINISH = ["Rough","Dressed"];
+const STATUS = {available:"Available", reserved:"Reserved", used:"Used"};
+
+/* ---------- state ---------- */
+const S = {
+  // stored
+  all:{}, cfg:clone(DEFAULTS), cfgUpdated:"", changed:[], localOnly:[], lastSync:"", sync:{token:"", gistId:""}, renumbered:[],
+  // derived / session
+  pieces:new Map(), storageOk:true, syncing:false, lastStamp:0,
+  view:"find", q:"", mat:"ALL", status:"stock", sort:"seq", minL:null, minW:null, minT:null,
+  sel:null, mode:"view", ripResult:null, confirmDel:false, returnFocus:null, confirmDisconnect:false,
+  add:{code:"PIN", treatment:"Untreated", finish:"Dressed"},
+  recent:[], lastAdded:null, lastAddedUids:null, importPlan:null, busy:false
+};
+
+/* ---------- helpers ---------- */
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+const $ = (s, r) => (r || document).querySelector(s);
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function num(v){ if (v == null) return null; const n = parseFloat(String(v).trim().replace(",", ".")); return isFinite(n) && n > 0 ? n : null; }
+function fmt(n){ if (n == null || n === "") return ""; return String(Math.round(Number(n) * 100) / 100); }
+function pad(n){ return String(n).padStart(3, "0"); }
+function today(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function stamp(){ let t = Date.now(); if (t <= S.lastStamp) t = S.lastStamp + 1; S.lastStamp = t; return new Date(t).toISOString(); }
+function newUid(){
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+  return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+}
+function matOf(code){ return S.cfg.materials.find(m => m.code === code) || {code:code, name:code, kind:"solid"}; }
+function sizeNum(code, w, t){
+  const a = Math.min(w, t), b = Math.max(w, t);
+  if (matOf(code).kind === "sheet") return a;
+  return a < 30 ? a : b;
+}
+function makeLabel(code, w, t, seq){ return code + "-" + fmt(sizeNum(code, w, t)) + "-" + pad(seq); }
+function splitLabel(label){ const i = String(label).lastIndexOf("-"); return i < 0 ? {pre:"", num:label} : {pre:label.slice(0, i+1), num:label.slice(i+1)}; }
+function maxSeq(){ let m = 0; for (const p of Object.values(S.all)) if (p && p.seq > m) m = p.seq; return m; }
+function parseSec(s){ const m = String(s).replace(/\s/g,"").replace(/[×X*]/g,"x").match(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/); return m ? [Number(m[1]), Number(m[2])] : null; }
+function whenText(iso){
+  if (!iso) return "";
+  const d = new Date(iso); if (isNaN(d)) return "";
+  const t = d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  const same = d.toDateString() === new Date().toDateString();
+  return same ? "today " + t : d.toLocaleDateString([], {day:"numeric", month:"short"}) + " " + t;
+}
+
+function normCfg(d){
+  const c = clone(DEFAULTS);
+  if (d && Array.isArray(d.materials)) {
+    const mats = d.materials.filter(m => m && typeof m.code === "string" && m.code).map(m => ({code:String(m.code).toUpperCase(), name:String(m.name || m.code), kind:m.kind === "sheet" ? "sheet" : "solid"}));
+    if (mats.length) c.materials = mats;
+  }
+  if (d && Array.isArray(d.sections)) c.sections = d.sections.filter(s => parseSec(s)).map(String);
+  if (d && Array.isArray(d.sheetThk)) c.sheetThk = d.sheetThk.map(Number).filter(n => n > 0);
+  if (d && Array.isArray(d.locations)) c.locations = d.locations.map(String).filter(Boolean);
+  return c;
+}
+
+/* ---------- local storage ---------- */
+function load(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      S.all = d.all && typeof d.all === "object" ? d.all : {};
+      S.cfg = normCfg(d.cfg);
+      S.cfgUpdated = d.cfgUpdated || "";
+      S.changed = Array.isArray(d.changed) ? d.changed : [];
+      S.localOnly = Array.isArray(d.localOnly) ? d.localOnly : [];
+      S.lastSync = d.lastSync || "";
+      S.sync = Object.assign({token:"", gistId:""}, d.sync || {});
+      S.renumbered = Array.isArray(d.renumbered) ? d.renumbered : [];
+    }
+    localStorage.setItem(LS_KEY + ".probe", "1");
+    localStorage.removeItem(LS_KEY + ".probe");
+    S.storageOk = true;
+  } catch (e) { S.storageOk = false; }
+  derive();
+}
+function persist(){
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({all:S.all, cfg:S.cfg, cfgUpdated:S.cfgUpdated, changed:S.changed, localOnly:S.localOnly,
+      lastSync:S.lastSync, sync:S.sync, renumbered:S.renumbered}));
+    S.storageOk = true;
+  } catch (e) {
+    if (S.storageOk) toast("This browser didn't save the change. Press Sync to keep a copy online.");
+    S.storageOk = false;
+  }
+}
+function derive(){
+  const m = new Map();
+  for (const p of Object.values(S.all)) if (p && !p.deleted && p.seq > 0) m.set(p.seq, p);
+  S.pieces = m;
+}
+function markChanged(uid){ if (!S.changed.includes(uid)) S.changed.push(uid); }
+function putPiece(p, isNew){
+  const np = clone(p);
+  if (!np.uid) np.uid = newUid();
+  np.updated = stamp();
+  if (!np.created) np.created = np.updated;
+  delete np.deleted;
+  S.all[np.uid] = np;
+  if (isNew && !S.localOnly.includes(np.uid)) S.localOnly.push(np.uid);
+  markChanged(np.uid);
+  derive(); persist();
+  return np;
+}
+function removePiece(p){
+  if (S.localOnly.includes(p.uid)) {
+    delete S.all[p.uid];
+    S.localOnly = S.localOnly.filter(u => u !== p.uid);
+    S.changed = S.changed.filter(u => u !== p.uid);
+  } else {
+    S.all[p.uid] = {uid:p.uid, seq:p.seq, deleted:true, updated:stamp()};
+    markChanged(p.uid);
+  }
+  derive(); persist();
+}
+function cfgChanged(){ S.cfgUpdated = stamp(); markChanged("__settings"); persist(); }
+
+/* ---------- sync ---------- */
+function exportDoc(){
+  return {app:"offcut-register", version:1, savedAt:new Date().toISOString(), cfg:S.cfg, cfgUpdated:S.cfgUpdated, pieces:Object.values(S.all)};
+}
+function mergeRemote(remote){
+  let received = 0;
+  const list = remote && Array.isArray(remote.pieces) ? remote.pieces : [];
+  for (const r of list) {
+    if (!r || typeof r.uid !== "string") continue;
+    const l = S.all[r.uid];
+    if (!l) { S.all[r.uid] = r; if (!r.deleted) received++; }
+    else if (String(r.updated || "") > String(l.updated || "")) {
+      S.all[r.uid] = r; received++;
+      S.changed = S.changed.filter(u => u !== r.uid);
+    }
+  }
+  if (remote && remote.cfg && String(remote.cfgUpdated || "") > String(S.cfgUpdated || "")) {
+    S.cfg = normCfg(remote.cfg); S.cfgUpdated = remote.cfgUpdated; received++;
+    S.changed = S.changed.filter(u => u !== "__settings");
+  }
+  derive();
+  return received;
+}
+function fixClashes(){
+  const bySeq = new Map();
+  for (const p of Object.values(S.all)) {
+    if (!p || p.deleted || !(p.seq > 0)) continue;
+    const arr = bySeq.get(p.seq);
+    if (arr) arr.push(p); else bySeq.set(p.seq, [p]);
+  }
+  const out = [];
+  let max = maxSeq();
+  for (const s of [...bySeq.keys()].sort((a, b) => a - b)) {
+    const list = bySeq.get(s);
+    if (list.length < 2) continue;
+    list.sort((a, b) => String(a.created || "").localeCompare(String(b.created || "")) || String(a.uid).localeCompare(String(b.uid)));
+    for (const p of list.slice(1)) {
+      max++;
+      const np = clone(p);
+      np.seq = max; np.label = makeLabel(np.code, np.width, np.thickness, max); np.updated = stamp();
+      S.all[np.uid] = np; markChanged(np.uid);
+      out.push({from:p.label, to:np.label});
+    }
+  }
+  derive();
+  return out;
+}
+async function gh(path, opts){
+  opts = opts || {};
+  const headers = {"Accept":"application/vnd.github+json", "Authorization":"Bearer " + S.sync.token};
+  if (opts.body) headers["Content-Type"] = "application/json";
+  let r;
+  try { r = await fetch(GH + path, {method:opts.method || "GET", headers:headers, body:opts.body, cache:"no-store"}); }
+  catch (e) { throw {kind:"offline"}; }
+  if (!r.ok) {
+    let msg = "";
+    try { msg = (await r.json()).message || ""; } catch (e) {}
+    throw {kind:"http", status:r.status, message:msg};
+  }
+  return r.status === 204 ? null : r.json();
+}
+async function findOrCreateGist(){
+  for (let page = 1; page <= 10; page++) {
+    const list = await gh("/gists?per_page=100&page=" + page);
+    if (!Array.isArray(list) || !list.length) break;
+    const g = list.find(x => x && x.files && x.files[GIST_FILE]);
+    if (g) return g.id;
+    if (list.length < 100) break;
+  }
+  const g = await gh("/gists", {method:"POST", body:JSON.stringify({
+    description:"Offcut Register data (written by the Offcut Register page)", public:false,
+    files:{[GIST_FILE]:{content:JSON.stringify(exportDoc())}}
+  })});
+  return g.id;
+}
+function syncErrText(e){
+  if (!e) return "Sync failed. Try again.";
+  if (e.kind === "offline") return "No connection to GitHub. Your changes are saved on this device. Sync again when you're online.";
+  if (e.kind === "parse") return "The online copy couldn't be read. Open it on GitHub and restore an earlier revision.";
+  if (e.status === 401) return "GitHub didn't accept the token. Check it under Settings › Sync.";
+  if (e.status === 404) return "The online copy wasn't found. Press Sync again to create a new one.";
+  if (e.status === 403 || e.status === 429) return "GitHub refused the request" + (e.message ? ": " + e.message : ".") + " Check the token has the gist permission.";
+  return "Sync failed" + (e.message ? ": " + e.message : ". Try again.");
+}
+async function doSync(){
+  if (S.syncing) return;
+  if (!S.sync.token) { setView("settings"); setTimeout(() => { try { $("#tokIn").focus(); } catch (e) {} }, 30); toast("Set up sync first."); return; }
+  S.syncing = true; renderSyncUI();
+  try {
+    if (!S.sync.gistId) { S.sync.gistId = await findOrCreateGist(); persist(); }
+    const g = await gh("/gists/" + S.sync.gistId);
+    let remote = {pieces:[]};
+    const f = g && g.files && g.files[GIST_FILE];
+    if (f) {
+      let txt = f.content;
+      if (f.truncated && f.raw_url) {
+        try { txt = await (await fetch(f.raw_url, {cache:"no-store"})).text(); }
+        catch (e) { throw {kind:"offline"}; }
+      }
+      if (txt && txt.trim()) { try { remote = JSON.parse(txt); } catch (e) { throw {kind:"parse"}; } }
+    }
+    const sent = S.changed.length;
+    const received = mergeRemote(remote);
+    const clashes = fixClashes();
+    await gh("/gists/" + S.sync.gistId, {method:"PATCH", body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(exportDoc())}}})});
+    S.changed = []; S.localOnly = []; S.lastSync = new Date().toISOString();
+    if (clashes.length) S.renumbered = S.renumbered.concat(clashes);
+    persist();
+    toast(clashes.length
+      ? "Synced. " + clashes.length + " number clash" + (clashes.length > 1 ? "es" : "") + " fixed: rewrite the IDs listed in Find."
+      : "Synced. " + sent + " change" + (sent === 1 ? "" : "s") + " sent, " + received + " received.");
+  } catch (e) {
+    console.error(e);
+    if (e && e.status === 404) { S.sync.gistId = ""; persist(); }
+    toast(syncErrText(e));
+    if (e && e.status === 401 && !S.lastSync) {
+      const te = $("#tokErr"); te.textContent = syncErrText(e); te.hidden = false;
+      S.sync.token = ""; persist();
+    }
+  } finally {
+    S.syncing = false;
+    renderAll();
+  }
+}
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function toast(msg, undo){
+  const t = $("#toast");
+  t.innerHTML = "<span>" + esc(msg) + "</span>" + (undo ? '<button type="button" id="undoBtn">Undo</button>' : "");
+  t.hidden = false;
+  if (undo) $("#undoBtn").onclick = () => { t.hidden = true; run(undo); };
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, undo ? 8000 : 5000);
+}
+async function run(fn){
+  if (S.busy) return;
+  S.busy = true;
+  try { await fn(); renderAll(); }
+  catch (e) { console.error(e); toast("Something went wrong. Reload the page and try again."); }
+  finally { S.busy = false; }
+}
+
+/* ---------- rendering ---------- */
+function dimsHTML(p){ return fmt(p.length) + " × " + fmt(p.width) + " × " + fmt(p.thickness) + ' <span class="u">mm</span>'; }
+function metaLine(p){
+  const m = matOf(p.code);
+  const bits = [];
+  if (p.location) bits.push(p.location);
+  if (!(m.kind === "sheet" && p.treatment === "Untreated") && p.treatment) bits.push(p.treatment);
+  if (p.finish) bits.push(p.finish);
+  if (p.project) bits.push("from " + p.project);
+  if (p.notes) bits.push(p.notes);
+  return bits.join(" · ") || m.name;
+}
+function rowHTML(p, exact){
+  const sl = splitLabel(p.label);
+  return '<button type="button" class="row' + (exact ? " exact" : "") + (p.status === "used" ? " is-used" : "") + '" data-seq="' + p.seq + '">' +
+    '<span class="id"><span class="pre">' + esc(sl.pre) + "</span>" + esc(sl.num) + "</span>" +
+    '<span class="pill ' + esc(p.status) + '">' + esc(STATUS[p.status] || p.status) + "</span>" +
+    '<span class="dims">' + dimsHTML(p) + "</span>" +
+    '<span class="meta">' + esc(metaLine(p)) + "</span></button>";
+}
+
+function renderCounts(){
+  let a = 0, r = 0, u = 0;
+  for (const p of S.pieces.values()) { if (p.status === "used") u++; else if (p.status === "reserved") r++; else a++; }
+  $("#counts").innerHTML = "<b>" + a + "</b> available · <b>" + r + "</b> reserved · <b>" + u + "</b> used";
+}
+function renderSyncUI(){
+  const btn = $("#syncBtn"), badge = $("#syncBadge"), lbl = $("#syncLbl"), info = $("#syncInfo");
+  const n = S.changed.length;
+  btn.disabled = S.syncing;
+  lbl.textContent = S.syncing ? "Syncing…" : "Sync";
+  badge.hidden = S.syncing || !n || !S.sync.token;
+  badge.textContent = n;
+  btn.classList.toggle("has-changes", !!(n && S.sync.token && !S.syncing));
+  btn.setAttribute("aria-label", S.syncing ? "Syncing" : (n ? "Sync " + n + " unsynced change" + (n === 1 ? "" : "s") : "Sync"));
+  if (!S.sync.token) info.textContent = "Sync not set up";
+  else if (!S.lastSync) info.textContent = "Not synced yet";
+  else info.textContent = "Synced " + whenText(S.lastSync) + (n ? " · " + n + " unsynced" : "");
+}
+function renderNotice(){
+  const n = $("#notice");
+  const msg = S.storageOk ? "" : "This browser isn't keeping data for this page. Open it from your saved link, and press Sync after each change so nothing is lost.";
+  n.textContent = msg; n.hidden = !msg;
+}
+
+function filtered(){
+  const q = S.q.trim().toLowerCase();
+  let exact = null;
+  if (/^\d+$/.test(q)) { const p = S.pieces.get(Number(q)); if (p) exact = p; }
+  let arr = [...S.pieces.values()];
+  if (S.mat !== "ALL") arr = arr.filter(p => p.code === S.mat);
+  if (S.status === "stock") arr = arr.filter(p => p.status !== "used");
+  else if (S.status !== "all") arr = arr.filter(p => p.status === S.status);
+  if (S.minL) arr = arr.filter(p => p.length >= S.minL);
+  if (S.minW || S.minT) {
+    const qa = Math.min(S.minW || 0, S.minT || 0), qb = Math.max(S.minW || 0, S.minT || 0);
+    arr = arr.filter(p => Math.min(p.width, p.thickness) >= qa && Math.max(p.width, p.thickness) >= qb);
+  }
+  if (q) arr = arr.filter(p => [p.label, p.location, p.project, p.notes, p.treatment, p.finish, matOf(p.code).name].join(" ").toLowerCase().includes(q));
+  if (S.sort === "long") arr.sort((a, b) => b.length - a.length || a.seq - b.seq);
+  else if (S.sort === "new") arr.sort((a, b) => String(b.added).localeCompare(String(a.added)) || b.seq - a.seq);
+  else arr.sort((a, b) => a.seq - b.seq);
+  if (exact) arr = [exact].concat(arr.filter(p => p.seq !== exact.seq));
+  return {arr, exact};
+}
+
+function renderClash(){
+  const box = $("#clashBox");
+  if (!S.renumbered.length) { box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  box.innerHTML = "<p><b>Rewrite these IDs on the pieces.</b> The same number was used on two devices before syncing, so one piece got a new number.</p>" +
+    "<ul>" + S.renumbered.map(c => "<li>" + esc(c.from) + " → " + esc(c.to) + "</li>").join("") + "</ul>" +
+    '<div><button type="button" class="btn small" data-clashdone="1">Done, I’ve rewritten them</button></div>';
+}
+
+function renderFind(){
+  renderClash();
+  const codes = S.cfg.materials.map(m => m.code);
+  for (const p of S.pieces.values()) if (!codes.includes(p.code)) codes.push(p.code);
+  if (S.mat !== "ALL" && !codes.includes(S.mat)) S.mat = "ALL";
+  $("#matChips").innerHTML = ["ALL"].concat(codes).map(c =>
+    '<button type="button" class="chip" data-mat="' + esc(c) + '" aria-pressed="' + (S.mat === c) + '">' + (c === "ALL" ? "All" : esc(c)) + "</button>").join("");
+
+  const list = $("#list"), info = $("#resultInfo");
+  if (S.pieces.size === 0) {
+    info.textContent = "";
+    if (S.sync.token && !S.lastSync) {
+      list.innerHTML = '<div class="empty"><h2>Get your register</h2><p>Sync is set up on this device. Press Sync to download your pieces.</p>' +
+        '<div class="btns"><button type="button" class="btn primary" data-go="sync">Sync now</button></div></div>';
+    } else {
+      list.innerHTML = '<div class="empty"><h2>No offcuts registered yet</h2>' +
+        '<p>Add the keepers after each project. Each piece gets an ID like <span class="stamp-eg">PIN-90-001</span> to pencil on the end grain.</p>' +
+        '<div class="btns"><button type="button" class="btn primary" data-go="add">Add a piece</button>' +
+        (S.sync.token ? '<button type="button" class="btn" data-go="sync">Sync now</button>' : '<button type="button" class="btn" data-go="setup">Set up sync</button>') +
+        '<button type="button" class="btn" data-go="import">Import a CSV</button></div></div>';
+    }
+    return;
+  }
+  const {arr, exact} = filtered();
+  const filtersOn = S.q || S.mat !== "ALL" || S.status !== "stock" || S.minL || S.minW || S.minT;
+  info.textContent = arr.length ? (arr.length + (arr.length === 1 ? " piece" : " pieces") + (exact ? " · Enter opens " + exact.label : "")) : "";
+  if (!arr.length) {
+    list.innerHTML = '<div class="empty"><h2>No pieces match</h2><p>Try a different number, or widen the filters.</p>' +
+      (filtersOn ? '<div class="btns"><button type="button" class="btn" data-clear="1">Clear search and filters</button></div>' : "") + "</div>";
+    return;
+  }
+  const shown = arr.slice(0, 300);
+  list.innerHTML = shown.map(p => rowHTML(p, exact && p.seq === exact.seq)).join("") +
+    (arr.length > shown.length ? '<p class="info">Showing the first 300. Narrow the search to see the rest.</p>' : "");
+}
+
+function addKind(){ return matOf(S.add.code).kind; }
+function readAddDims(){ return {L:num($("#aL").value), W:num($("#aW").value), T:num($("#aT").value)}; }
+function renderAdd(){
+  if (!S.cfg.materials.some(m => m.code === S.add.code)) S.add.code = S.cfg.materials[0] ? S.cfg.materials[0].code : "PIN";
+  $("#aMat").innerHTML = S.cfg.materials.map(m =>
+    '<button type="button" class="chip" data-code="' + esc(m.code) + '" aria-pressed="' + (S.add.code === m.code) + '">' + esc(m.code) + ' <span style="opacity:.7">' + esc(m.name) + "</span></button>").join("");
+  const d = readAddDims();
+  if (addKind() === "sheet") {
+    $("#aPresetLbl").textContent = "Sheet thickness";
+    $("#aPresets").innerHTML = S.cfg.sheetThk.map(t =>
+      '<button type="button" class="chip" data-thk="' + t + '" aria-pressed="' + (d.T === t) + '">' + fmt(t) + " mm</button>").join("") || '<span class="meta">Add thicknesses in Settings.</span>';
+  } else {
+    $("#aPresetLbl").textContent = "Section (width × thickness)";
+    $("#aPresets").innerHTML = S.cfg.sections.map(s => {
+      const wt = parseSec(s); if (!wt) return "";
+      return '<button type="button" class="chip" data-sec="' + esc(s) + '" aria-pressed="' + (d.W === wt[0] && d.T === wt[1]) + '">' + fmt(wt[0]) + "×" + fmt(wt[1]) + "</button>";
+    }).join("") || '<span class="meta">Add sizes in Settings.</span>';
+  }
+  $("#aTreat").innerHTML = TREAT.map(t => '<button type="button" class="chip" data-treat="' + t + '" aria-pressed="' + (S.add.treatment === t) + '">' + t + "</button>").join("");
+  $("#aFinish").innerHTML = FINISH.map(f => '<button type="button" class="chip" data-finish="' + f + '" aria-pressed="' + (S.add.finish === f) + '">' + f + "</button>").join("");
+  renderPreview();
+  renderAddDone();
+}
+function renderPreview(){
+  const d = readAddDims();
+  const next = maxSeq() + 1;
+  const qty = Math.max(1, Math.min(20, parseInt($("#aQty").value, 10) || 1));
+  const sn = d.W && d.T ? fmt(sizeNum(S.add.code, d.W, d.T)) : "?";
+  const first = S.add.code + "-" + sn + "-" + pad(next);
+  $("#aPreview").textContent = qty > 1 ? first + " … " + pad(next + qty - 1) : first;
+  $("#aSave").textContent = qty > 1 ? "Add " + qty + " pieces" : "Add piece";
+}
+function renderAddDone(){
+  const box = $("#aDone");
+  if (!S.lastAdded) { box.hidden = true; box.innerHTML = ""; }
+  else {
+    box.hidden = false;
+    box.innerHTML = '<span class="lbl">Write on the piece' + (S.lastAdded.length > 1 ? "s" : "") + "</span>" +
+      '<div class="ids">' + S.lastAdded.map(l => '<span class="id">' + esc(l) + "</span>").join("") + "</div>" +
+      '<div><button type="button" class="link" data-undo-add="1">Undo</button></div>';
+  }
+  const rec = S.recent.map(u => S.all[u]).filter(p => p && !p.deleted);
+  $("#aRecentWrap").hidden = !rec.length;
+  $("#aRecent").innerHTML = rec.slice(0, 30).map(p => rowHTML(p)).join("");
+}
+
+function chipX(label, attr, val){
+  return '<button type="button" class="chip" ' + attr + '="' + esc(val) + '" aria-label="Remove ' + esc(label) + '">' + esc(label) + ' <span class="x" aria-hidden="true">×</span></button>';
+}
+function renderSettings(){
+  // sync card
+  const on = !!S.sync.token;
+  $("#syncSetup").hidden = on;
+  const box = $("#syncOn");
+  box.hidden = !on;
+  if (on) {
+    const gistLink = S.sync.gistId ? '<a href="https://gist.github.com/' + esc(S.sync.gistId) + '" target="_blank" rel="noopener">Open on GitHub</a> (Revisions shows every past version)' : "Created on the first sync";
+    box.innerHTML = '<dl class="kv"><dt>Status</dt><dd>Connected</dd>' +
+      "<dt>Last synced</dt><dd>" + esc(S.lastSync ? whenText(S.lastSync) : "Not yet") + "</dd>" +
+      "<dt>Unsynced</dt><dd>" + S.changed.length + " change" + (S.changed.length === 1 ? "" : "s") + "</dd>" +
+      "<dt>Online copy</dt><dd>" + gistLink + "</dd></dl>" +
+      '<div class="btnrow" style="margin-top:12px"><button type="button" class="btn primary small" data-sync="1">Sync now</button>' +
+      (S.confirmDisconnect
+        ? '</div><div class="confirm" style="margin-top:12px"><p>Remove the token from this device? Your pieces stay here and online. You can connect again with the same token.</p><div class="btnrow"><button type="button" class="btn small" data-disc="no">Keep connected</button><button type="button" class="btn danger solid small" data-disc="yes">Disconnect</button></div></div>'
+        : '<button type="button" class="btn small" data-disc="ask">Disconnect this device</button></div>');
+  }
+  const used = new Set([...S.pieces.values()].map(p => p.code));
+  $("#sMat").innerHTML = S.cfg.materials.map(m =>
+    '<div class="mrow"><span class="id">' + esc(m.code) + "</span><span>" + esc(m.name) + ' <span class="meta">· ' + (m.kind === "sheet" ? "Sheet" : "Solid timber") + "</span></span>" +
+    (used.has(m.code) ? '<span class="meta">In use</span>' : '<button type="button" class="btn small" data-delmat="' + esc(m.code) + '">Remove</button>') + "</div>").join("");
+  $("#sSec").innerHTML = S.cfg.sections.map(s => { const wt = parseSec(s); return chipX(fmt(wt[0]) + "×" + fmt(wt[1]), "data-delsec", s); }).join("") || '<span class="meta">No sizes yet.</span>';
+  $("#sThk").innerHTML = S.cfg.sheetThk.map(t => chipX(fmt(t) + " mm", "data-delthk", t)).join("") || '<span class="meta">No thicknesses yet.</span>';
+  $("#sLoc").innerHTML = S.cfg.locations.map(l => chipX(l, "data-delloc", l)).join("") || '<span class="meta">No saved locations yet.</span>';
+  renderImportMsg();
+}
+
+function renderDatalists(){
+  const locs = new Set(S.cfg.locations), projs = new Set();
+  for (const p of S.pieces.values()) { if (p.location) locs.add(p.location); if (p.project) projs.add(p.project); }
+  $("#dlLoc").innerHTML = [...locs].sort().map(l => '<option value="' + esc(l) + '"></option>').join("");
+  $("#dlProj").innerHTML = [...projs].sort().map(l => '<option value="' + esc(l) + '"></option>').join("");
+}
+
+function renderAll(){
+  renderCounts(); renderSyncUI(); renderNotice(); renderDatalists();
+  if (S.view === "find") renderFind();
+  else if (S.view === "add") renderAdd();
+  else renderSettings();
+  if (S.sel != null && (S.mode === "view" || S.mode === "ripdone")) renderSheet();
+}
+function setView(v){
+  S.view = v;
+  for (const id of ["find","add","settings"]) {
+    $("#v-" + id).hidden = id !== v;
+    $("#tab-" + id).setAttribute("aria-selected", String(id === v));
+  }
+  renderAll();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- sheet ---------- */
+function openSheet(seq){
+  if (!S.pieces.get(seq)) return;
+  S.returnFocus = document.activeElement;
+  S.sel = seq; S.mode = "view"; S.ripResult = null; S.confirmDel = false;
+  document.body.classList.add("locked");
+  renderSheet();
+}
+function closeSheet(){
+  S.sel = null; S.mode = "view";
+  $("#sheetHost").innerHTML = "";
+  document.body.classList.remove("locked");
+  if (S.returnFocus && document.contains(S.returnFocus)) { try { S.returnFocus.focus({preventScroll:true}); } catch (e) {} }
+}
+function opt(v, cur, label){ return '<option value="' + esc(v) + '"' + (String(v) === String(cur) ? " selected" : "") + ">" + esc(label == null ? v : label) + "</option>"; }
+
+function renderSheet(){
+  const host = $("#sheetHost");
+  if (S.sel == null) { host.innerHTML = ""; return; }
+  const p = S.pieces.get(S.sel);
+  if (!p && S.mode !== "ripdone") { closeSheet(); return; }
+  const m = p ? matOf(p.code) : null;
+  const head = (title) => '<div class="sh-head"><h2 id="shTitle" class="' + (title ? "sh-title" : "id") + '">' +
+    (title ? esc(title) : '<span class="pre">' + esc(splitLabel(p.label).pre) + "</span>" + esc(splitLabel(p.label).num)) + "</h2>" +
+    (title ? "<span></span>" : '<span class="pill ' + esc(p.status) + '">' + esc(STATUS[p.status] || p.status) + "</span>") +
+    '<button type="button" class="xbtn" data-close="1" aria-label="Close">×</button></div>';
+  let body = "";
+
+  if (S.mode === "view") {
+    const facts = [
+      ["Material", m.name + " (" + p.code + ")"], ["Treatment", p.treatment], ["Finish", p.finish],
+      ["Location", p.location], ["Project", p.project], ["Added", p.added],
+      ["Ripped from", p.fromLabel || ""], ["Notes", p.notes]
+    ].filter(f => f[1]);
+    const acts = p.status === "used"
+      ? '<div class="actions"><button type="button" class="btn" data-act="restore">Back in stock</button><button type="button" class="btn" data-act="edit">Edit</button></div>'
+      : '<div class="actions"><button type="button" class="btn primary" data-act="cut">Cut</button><button type="button" class="btn" data-act="rip">Rip</button>' +
+        '<button type="button" class="btn" data-act="reserve">' + (p.status === "reserved" ? "Unreserve" : "Reserve") + '</button><button type="button" class="btn" data-act="used">Used up</button></div>' +
+        '<div><button type="button" class="link" data-act="edit">Edit details</button></div>';
+    body = head() + '<p class="bigdims">' + dimsHTML(p) + "</p>" +
+      '<dl class="facts">' + facts.map(f => "<dt>" + esc(f[0]) + "</dt><dd>" + esc(f[1]) + "</dd>").join("") + "</dl>" + acts;
+  }
+  else if (S.mode === "cut") {
+    const sheet = m.kind === "sheet";
+    body = head("Cut " + p.label) +
+      '<p class="sh-note">Enter what’s left after the cut. The ID stays the same.</p>' +
+      '<form class="sh-form" data-form="cut" novalidate><div class="' + (sheet ? "grid2" : "") + '">' +
+      '<label class="field" for="cL"><span class="lbl">Length left mm</span><input id="cL" inputmode="decimal" value="' + fmt(p.length) + '" autocomplete="off"></label>' +
+      (sheet ? '<label class="field" for="cW"><span class="lbl">Width left mm</span><input id="cW" inputmode="decimal" value="' + fmt(p.width) + '" autocomplete="off"></label>' : "") +
+      '</div><p id="formErr" class="err" hidden></p>' +
+      '<div class="sh-btns"><button type="button" class="btn" data-act="back">Back</button><button type="submit" class="btn primary">Save</button></div></form>';
+  }
+  else if (S.mode === "rip") {
+    body = head("Rip " + p.label) +
+      '<p class="sh-note">The original is marked used. Each strip gets a new number to write on it.</p>' +
+      '<form class="sh-form" data-form="rip" novalidate><div class="grid3">' +
+      '<label class="field" for="rL"><span class="lbl">Length mm</span><input id="rL" inputmode="decimal" value="' + fmt(p.length) + '" autocomplete="off"></label>' +
+      '<label class="field" for="rW"><span class="lbl">Strip 1 width</span><input id="rW" inputmode="decimal" autocomplete="off"></label>' +
+      '<label class="field" for="rT"><span class="lbl">Thick mm</span><input id="rT" inputmode="decimal" value="' + fmt(Math.min(p.width, p.thickness)) + '" autocomplete="off"></label></div>' +
+      '<label class="field" for="rW2"><span class="lbl">Strip 2 width (optional)</span><input id="rW2" inputmode="decimal" autocomplete="off" placeholder="Leave empty if the rest is waste"></label>' +
+      '<p id="formErr" class="err" hidden></p>' +
+      '<div class="sh-btns"><button type="button" class="btn" data-act="back">Back</button><button type="submit" class="btn primary">Save rip</button></div></form>';
+  }
+  else if (S.mode === "ripdone") {
+    const r = S.ripResult;
+    body = head("Write on the new strips") +
+      '<div style="display:flex;flex-wrap:wrap;gap:4px 18px">' + r.made.map(l => '<span class="id" style="font-size:34px">' + esc(l) + "</span>").join("") + "</div>" +
+      '<p class="sh-note">' + esc(r.from) + " is marked used.</p>" +
+      '<div class="sh-btns"><button type="button" class="btn" data-act="undoRip">Undo</button><button type="button" class="btn primary" data-close="1">Done</button></div>';
+  }
+  else if (S.mode === "edit") {
+    body = head("Edit " + p.label) +
+      '<form class="sh-form" data-form="edit" novalidate>' +
+      '<div class="grid2"><label class="field" for="eCode"><span class="lbl">Material</span><select id="eCode">' +
+        S.cfg.materials.map(x => opt(x.code, p.code, x.code + " · " + x.name)).join("") + (S.cfg.materials.some(x => x.code === p.code) ? "" : opt(p.code, p.code)) + "</select></label>" +
+      '<label class="field" for="eStatus"><span class="lbl">Status</span><select id="eStatus">' + Object.keys(STATUS).map(k => opt(k, p.status, STATUS[k])).join("") + "</select></label></div>" +
+      '<div class="grid3">' +
+        '<label class="field" for="eL"><span class="lbl">Length mm</span><input id="eL" inputmode="decimal" value="' + fmt(p.length) + '"></label>' +
+        '<label class="field" for="eW"><span class="lbl">Width mm</span><input id="eW" inputmode="decimal" value="' + fmt(p.width) + '"></label>' +
+        '<label class="field" for="eT"><span class="lbl">Thick mm</span><input id="eT" inputmode="decimal" value="' + fmt(p.thickness) + '"></label></div>' +
+      '<div class="grid2"><label class="field" for="eTreat"><span class="lbl">Treatment</span><select id="eTreat">' + TREAT.map(t => opt(t, p.treatment)).join("") + "</select></label>" +
+      '<label class="field" for="eFinish"><span class="lbl">Finish</span><select id="eFinish">' + opt("", p.finish, "—") + FINISH.map(f => opt(f, p.finish)).join("") + "</select></label></div>" +
+      '<div class="grid2"><label class="field" for="eLoc"><span class="lbl">Location</span><input id="eLoc" list="dlLoc" value="' + esc(p.location) + '"></label>' +
+      '<label class="field" for="eProj"><span class="lbl">Source project</span><input id="eProj" list="dlProj" value="' + esc(p.project) + '"></label></div>' +
+      '<div class="grid2"><label class="field" for="eNotes"><span class="lbl">Notes</span><input id="eNotes" value="' + esc(p.notes) + '"></label>' +
+      '<label class="field" for="eAdded"><span class="lbl">Date added</span><input id="eAdded" type="date" value="' + esc(p.added) + '"></label></div>' +
+      '<p id="formErr" class="err" hidden></p>' +
+      '<div class="sh-btns"><button type="button" class="btn" data-act="back">Back</button><button type="submit" class="btn primary">Save</button></div></form>' +
+      (S.confirmDel
+        ? '<div class="confirm"><p>Delete ' + esc(p.label) + ' from the register for good? To keep its history, mark it used instead.</p><div class="sh-btns"><button type="button" class="btn" data-act="delNo">Keep it</button><button type="button" class="btn danger solid" data-act="delYes">Delete</button></div></div>'
+        : '<div><button type="button" class="link" style="color:var(--danger)" data-act="del">Delete piece</button></div>');
+  }
+
+  host.innerHTML = '<div class="scrim" data-scrim="1"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">' + body + "</div></div>";
+  const first = host.querySelector("#cL, #rW, #eL") || host.querySelector(".sheet .btn.primary, .sheet .btn") || host.querySelector(".xbtn");
+  if (first) {
+    try { first.focus({preventScroll:true}); } catch (e) {}
+    if (first.select && S.mode === "cut") first.select();
+  }
+}
+function formErr(msg){ const e = $("#formErr"); if (e) { e.textContent = msg; e.hidden = !msg; } }
+
+/* ---------- actions ---------- */
+function clearSearch(){ S.q = ""; $("#q").value = ""; }
+
+function setStatus(p, status, msg){
+  const prev = clone(p);
+  putPiece(Object.assign(clone(p), {status:status}));
+  closeSheet(); clearSearch();
+  toast(msg, () => putPiece(prev));
+}
+function saveCut(){
+  const p = S.pieces.get(S.sel); if (!p) return;
+  const L = num($("#cL").value);
+  const wEl = $("#cW"); const W = wEl ? num(wEl.value) : p.width;
+  if (!L) return formErr("Enter the length that's left, in mm.");
+  if (wEl && !W) return formErr("Enter the width that's left, in mm.");
+  if (L > p.length || W > p.width) return formErr("A cut can't make the piece bigger. Use Edit to correct a measurement.");
+  const prev = clone(p);
+  putPiece(Object.assign(clone(p), {length:L, width:W}));
+  closeSheet(); clearSearch();
+  toast(p.label + " cut to " + fmt(L) + (wEl ? " × " + fmt(W) : "") + " mm", () => putPiece(prev));
+}
+function saveRip(){
+  const p = S.pieces.get(S.sel); if (!p) return;
+  const L = num($("#rL").value), W = num($("#rW").value), T = num($("#rT").value);
+  const w2raw = $("#rW2").value.trim(); const W2 = w2raw ? num(w2raw) : null;
+  if (!L || !W || !T) return formErr("Enter length, strip 1 width and thickness in mm.");
+  if (w2raw && !W2) return formErr("Strip 2 width needs to be a number in mm, or empty.");
+  const prev = clone(p);
+  const strips = [{L, W, T}]; if (W2) strips.push({L, W:W2, T});
+  putPiece(Object.assign(clone(p), {status:"used"}));
+  const made = [];
+  for (const s of strips) {
+    const seq = maxSeq() + 1;
+    made.push(putPiece({seq, code:p.code, label:makeLabel(p.code, s.W, s.T, seq), length:s.L, width:s.W, thickness:s.T,
+      treatment:p.treatment || "Untreated", finish:p.finish || "", location:p.location || "", project:p.project || "", notes:"",
+      status:"available", added:today(), fromUid:p.uid, fromLabel:p.label}, true));
+  }
+  S.ripResult = {made:made.map(b => b.label), uids:made.map(b => b.uid), prev, from:p.label};
+  S.mode = "ripdone";
+  clearSearch(); renderSheet();
+}
+function undoRip(){
+  const r = S.ripResult; if (!r) return;
+  for (const u of r.uids) { const x = S.all[u]; if (x) removePiece(x); }
+  putPiece(r.prev);
+  closeSheet();
+  toast("Rip undone. " + r.from + " is back in stock.");
+}
+function saveEdit(){
+  const p = S.pieces.get(S.sel); if (!p) return;
+  const L = num($("#eL").value), W = num($("#eW").value), T = num($("#eT").value);
+  if (!L || !W || !T) return formErr("Length, width and thickness need to be numbers in mm.");
+  const code = $("#eCode").value;
+  const next = Object.assign(clone(p), {
+    code, length:L, width:W, thickness:T,
+    treatment:$("#eTreat").value, finish:$("#eFinish").value,
+    location:$("#eLoc").value.trim(), project:$("#eProj").value.trim(), notes:$("#eNotes").value.trim(),
+    status:$("#eStatus").value, added:$("#eAdded").value || p.added
+  });
+  next.label = makeLabel(code, W, T, p.seq);
+  const prev = clone(p);
+  putPiece(next);
+  closeSheet();
+  toast(next.label !== prev.label ? "Saved. The ID is now " + next.label + ". Rewrite it on the piece." : "Saved " + next.label, () => putPiece(prev));
+}
+function deletePiece(){
+  const p = S.pieces.get(S.sel); if (!p) return;
+  const prev = clone(p);
+  const wasLocal = S.localOnly.includes(p.uid);
+  removePiece(p);
+  closeSheet();
+  toast("Deleted " + prev.label, () => putPiece(prev, wasLocal));
+}
+function addFromForm(){
+  const d = readAddDims();
+  const err = $("#aErr");
+  if (!d.L || !d.W || !d.T) { err.textContent = "Enter length, width and thickness in mm."; err.hidden = false; return; }
+  err.hidden = true;
+  const qty = Math.max(1, Math.min(20, parseInt($("#aQty").value, 10) || 1));
+  const base = {code:S.add.code, length:d.L, width:d.W, thickness:d.T, treatment:S.add.treatment, finish:S.add.finish,
+    location:$("#aLoc").value.trim(), project:$("#aProj").value.trim(), notes:$("#aNotes").value.trim()};
+  const made = [];
+  for (let i = 0; i < qty; i++) {
+    const seq = maxSeq() + 1;
+    const np = putPiece(Object.assign({}, base, {seq, label:makeLabel(base.code, base.width, base.thickness, seq), status:"available", added:today()}), true);
+    made.push(np); S.recent.unshift(np.uid);
+  }
+  S.lastAdded = made.map(b => b.label);
+  S.lastAddedUids = made.map(b => b.uid);
+  $("#aL").value = ""; $("#aNotes").value = ""; $("#aQty").value = "1";
+  setTimeout(() => { try { $("#aL").focus({preventScroll:true}); } catch (e) {} }, 0);
+}
+function undoAdd(){
+  const uids = S.lastAddedUids || [];
+  for (const u of uids) { const x = S.all[u]; if (x && !x.deleted) removePiece(x); }
+  S.recent = S.recent.filter(u => !uids.includes(u));
+  S.lastAdded = null; S.lastAddedUids = null;
+  toast("Removed the last addition.");
+}
+
+/* ---------- CSV ---------- */
+const COLS = {
+  seq:["seq","number","no","no.","#","piece"], label:["id","label"], code:["material","code","species"],
+  length:["length","l","length mm","length (mm)"], width:["width","w","width mm","width (mm)"], thickness:["thickness","t","thk","thick","thickness mm","thickness (mm)"],
+  treatment:["treatment"], finish:["finish"], location:["location"], project:["project","source project","source"],
+  notes:["notes","condition"], status:["status"], added:["added","date added","date"]
+};
+function csvCell(v){ v = v == null ? "" : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function toCSV(){
+  const head = ["seq","id","material","length","width","thickness","treatment","finish","location","project","notes","status","added","ripped from"];
+  const rows = [...S.pieces.values()].sort((a, b) => a.seq - b.seq).map(p =>
+    [p.seq, p.label, p.code, fmt(p.length), fmt(p.width), fmt(p.thickness), p.treatment, p.finish, p.location, p.project, p.notes, p.status, p.added, p.fromLabel || ""].map(csvCell).join(","));
+  return [head.join(",")].concat(rows).join("\r\n") + "\r\n";
+}
+function parseDelimited(text){
+  text = String(text).replace(/^﻿/, "");
+  const first = text.split(/\r?\n/, 1)[0] || "";
+  const d = first.includes("\t") ? "\t" : (first.split(";").length > first.split(",").length ? ";" : ",");
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i+1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"' && f === "") q = true;
+    else if (c === d) { row.push(f); f = ""; }
+    else if (c === "\n") { row.push(f); rows.push(row); row = []; f = ""; }
+    else if (c !== "\r") f += c;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim() !== ""));
+}
+function normTreat(v){ const s = String(v || "").trim().toLowerCase().replace(/\s/g, ""); if (s === "h1.2" || s === "h12") return "H1.2"; if (s === "h3.2" || s === "h32") return "H3.2"; return "Untreated"; }
+function normFinish(v){ const s = String(v || "").trim().toLowerCase(); if (s.startsWith("d")) return "Dressed"; if (s.startsWith("r")) return "Rough"; return ""; }
+function normStatus(v){ const s = String(v || "").trim().toLowerCase(); if (s.startsWith("r")) return "reserved"; if (s.startsWith("u")) return "used"; return "available"; }
+function planImport(text){
+  const rows = parseDelimited(text);
+  if (rows.length < 2) return {rows:[], errs:["Add a header row and at least one piece."]};
+  const head = rows[0].map(h => String(h).trim().toLowerCase());
+  const idx = {};
+  for (const k in COLS) idx[k] = head.findIndex(h => COLS[k].includes(h));
+  const missing = ["code","length","width","thickness"].filter(k => idx[k] < 0).map(k => k === "code" ? "material" : k);
+  if (missing.length) return {rows:[], errs:["Missing column" + (missing.length > 1 ? "s" : "") + ": " + missing.join(", ") + "."]};
+  const out = [], errs = [], seen = new Set();
+  rows.slice(1).forEach((r, i) => {
+    const n = i + 2;
+    const g = k => idx[k] >= 0 ? String(r[idx[k]] == null ? "" : r[idx[k]]).trim() : "";
+    const code = g("code").toUpperCase();
+    if (!code) { errs.push("Row " + n + ": material is empty."); return; }
+    if (!S.cfg.materials.some(m => m.code === code)) { errs.push("Row " + n + ": unknown material " + code + ". Add it under Materials first."); return; }
+    const L = num(g("length")), W = num(g("width")), T = num(g("thickness"));
+    if (!L || !W || !T) { errs.push("Row " + n + ": length, width and thickness must be numbers in mm."); return; }
+    let seq = parseInt(g("seq"), 10);
+    if (!(seq > 0)) { const m = g("label").match(/(\d+)\s*$/); seq = m ? parseInt(m[1], 10) : null; }
+    if (seq && seen.has(seq)) { errs.push("Row " + n + ": piece number " + seq + " appears twice."); return; }
+    if (seq) seen.add(seq);
+    const added = /^\d{4}-\d{2}-\d{2}$/.test(g("added")) ? g("added") : today();
+    out.push({seq:seq || null, code, length:L, width:W, thickness:T, treatment:normTreat(g("treatment")), finish:normFinish(g("finish")),
+      location:g("location"), project:g("project"), notes:g("notes"), status:normStatus(g("status")), added});
+  });
+  return {rows:out, errs};
+}
+function renderImportMsg(){
+  const box = $("#importMsg"), plan = S.importPlan;
+  if (!plan) { box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  if (plan.done) { box.innerHTML = "<p>" + esc(plan.done) + "</p>"; return; }
+  const upd = plan.rows.filter(r => r.seq && S.pieces.has(r.seq)).length;
+  const fresh = plan.rows.length - upd;
+  box.innerHTML =
+    (plan.rows.length ? "<p><b>" + plan.rows.length + "</b> row" + (plan.rows.length === 1 ? "" : "s") + " ready: " + fresh + " new, " + upd + " replacing existing pieces.</p>" : "") +
+    (plan.errs.length ? "<p>" + plan.errs.length + " row" + (plan.errs.length === 1 ? "" : "s") + " skipped:</p><ul>" + plan.errs.slice(0, 12).map(e => "<li>" + esc(e) + "</li>").join("") + (plan.errs.length > 12 ? "<li>…and " + (plan.errs.length - 12) + " more</li>" : "") + "</ul>" : "") +
+    (plan.rows.length ? '<div class="btnrow"><button type="button" class="btn primary small" id="importGo">Import ' + plan.rows.length + " row" + (plan.rows.length === 1 ? "" : "s") + '</button><button type="button" class="btn small" id="importCancel">Cancel</button></div>' : "");
+}
+function runImport(){
+  const plan = S.importPlan; if (!plan || !plan.rows.length) return;
+  let n = 0;
+  for (const r of plan.rows) {
+    const existing = r.seq ? S.pieces.get(r.seq) : null;
+    const seq = r.seq || (maxSeq() + 1);
+    const body = {seq, code:r.code, label:makeLabel(r.code, r.width, r.thickness, seq), length:r.length, width:r.width, thickness:r.thickness,
+      treatment:r.treatment, finish:r.finish, location:r.location, project:r.project, notes:r.notes, status:r.status, added:r.added};
+    if (existing) { body.uid = existing.uid; body.created = existing.created; if (existing.fromLabel) body.fromLabel = existing.fromLabel; if (existing.fromUid) body.fromUid = existing.fromUid; }
+    putPiece(body, !existing);
+    n++;
+  }
+  S.importPlan = {done:"Imported " + n + " piece" + (n === 1 ? "" : "s") + ". Press Sync to send them to your other devices."};
+  $("#importText").value = ""; $("#importFile").value = "";
+}
+
+/* ---------- events ---------- */
+document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
+$("#syncBtn").addEventListener("click", () => doSync());
+
+$("#q").addEventListener("input", e => { S.q = e.target.value; renderFind(); });
+$("#q").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  const q = S.q.trim();
+  if (/^\d+$/.test(q) && S.pieces.has(Number(q))) { openSheet(Number(q)); return; }
+  const {arr} = filtered();
+  if (arr.length === 1) openSheet(arr[0].seq);
+});
+$("#matChips").addEventListener("click", e => { const b = e.target.closest("[data-mat]"); if (b) { S.mat = b.dataset.mat; renderFind(); } });
+$("#fStatus").addEventListener("change", e => { S.status = e.target.value; renderFind(); });
+$("#fSort").addEventListener("change", e => { S.sort = e.target.value; renderFind(); });
+$("#sizeToggle").addEventListener("click", e => {
+  const box = $("#sizeBox"); box.hidden = !box.hidden;
+  e.currentTarget.setAttribute("aria-expanded", String(!box.hidden));
+  e.currentTarget.setAttribute("aria-pressed", String(!box.hidden));
+});
+for (const id of ["minL","minW","minT"]) $("#" + id).addEventListener("input", e => { S[id] = num(e.target.value); renderFind(); });
+$("#sizeClear").addEventListener("click", () => { for (const id of ["minL","minW","minT"]) { $("#" + id).value = ""; S[id] = null; } renderFind(); });
+$("#v-find").addEventListener("click", e => {
+  const row = e.target.closest("[data-seq]"); if (row) { openSheet(Number(row.dataset.seq)); return; }
+  if (e.target.closest("[data-clashdone]")) { S.renumbered = []; persist(); renderFind(); return; }
+  const go = e.target.closest("[data-go]");
+  if (go) {
+    const g = go.dataset.go;
+    if (g === "add") setView("add");
+    else if (g === "sync") doSync();
+    else if (g === "setup") { setView("settings"); setTimeout(() => { try { $("#tokIn").focus(); } catch (e2) {} }, 30); }
+    else { setView("settings"); setTimeout(() => { const t = $("#importText"); t.scrollIntoView({block:"center"}); try { t.focus({preventScroll:true}); } catch (e2) {} }, 30); }
+    return;
+  }
+  if (e.target.closest("[data-clear]")) {
+    clearSearch(); S.mat = "ALL"; S.status = "stock"; $("#fStatus").value = "stock";
+    for (const id of ["minL","minW","minT"]) { $("#" + id).value = ""; S[id] = null; }
+    renderFind();
+  }
+});
+
+// add
+$("#aMat").addEventListener("click", e => {
+  const b = e.target.closest("[data-code]"); if (!b) return;
+  const before = addKind();
+  S.add.code = b.dataset.code;
+  if (addKind() !== before) { $("#aW").value = ""; $("#aT").value = ""; }
+  renderAdd();
+});
+$("#aPresets").addEventListener("click", e => {
+  const s = e.target.closest("[data-sec]"), t = e.target.closest("[data-thk]");
+  if (s) { const wt = parseSec(s.dataset.sec); $("#aW").value = fmt(wt[0]); $("#aT").value = fmt(wt[1]); }
+  else if (t) { $("#aT").value = fmt(Number(t.dataset.thk)); }
+  else return;
+  renderAdd();
+  const L = $("#aL"); if (!L.value) { try { L.focus({preventScroll:true}); } catch (e2) {} }
+});
+$("#aTreat").addEventListener("click", e => { const b = e.target.closest("[data-treat]"); if (b) { S.add.treatment = b.dataset.treat; renderAdd(); } });
+$("#aFinish").addEventListener("click", e => { const b = e.target.closest("[data-finish]"); if (b) { S.add.finish = b.dataset.finish; renderAdd(); } });
+for (const id of ["aW","aT"]) $("#" + id).addEventListener("input", () => renderAdd());
+for (const id of ["aL","aQty"]) $("#" + id).addEventListener("input", () => renderPreview());
+$("#addForm").addEventListener("submit", e => { e.preventDefault(); run(addFromForm); });
+$("#aDone").addEventListener("click", e => { if (e.target.closest("[data-undo-add]")) run(undoAdd); });
+$("#aRecent").addEventListener("click", e => { const r = e.target.closest("[data-seq]"); if (r) openSheet(Number(r.dataset.seq)); });
+
+// settings
+function cfgChange(fn){ fn(); cfgChanged(); renderAll(); }
+$("#tokForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const tok = $("#tokIn").value.trim();
+  const te = $("#tokErr");
+  if (!tok) { te.textContent = "Paste your GitHub token first."; te.hidden = false; return; }
+  te.hidden = true;
+  S.sync.token = tok; S.sync.gistId = ""; persist();
+  $("#tokIn").value = "";
+  renderAll();
+  doSync();
+});
+$("#syncOn").addEventListener("click", e => {
+  if (e.target.closest("[data-sync]")) { doSync(); return; }
+  const d = e.target.closest("[data-disc]"); if (!d) return;
+  if (d.dataset.disc === "ask") S.confirmDisconnect = true;
+  else if (d.dataset.disc === "no") S.confirmDisconnect = false;
+  else { S.sync = {token:"", gistId:""}; S.confirmDisconnect = false; persist(); toast("Disconnected. Your pieces are still on this device."); }
+  renderAll();
+});
+$("#sMatForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const code = $("#sMatCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const name = $("#sMatName").value.trim() || code;
+  const err = $("#sMatErr");
+  if (!code) { err.textContent = "Enter a short code, like OAK."; err.hidden = false; return; }
+  if (S.cfg.materials.some(m => m.code === code)) { err.textContent = code + " already exists."; err.hidden = false; return; }
+  err.hidden = true;
+  cfgChange(() => { S.cfg.materials.push({code, name, kind:$("#sMatKind").value}); });
+  $("#sMatCode").value = ""; $("#sMatName").value = "";
+});
+$("#sMat").addEventListener("click", e => { const b = e.target.closest("[data-delmat]"); if (b) cfgChange(() => { S.cfg.materials = S.cfg.materials.filter(m => m.code !== b.dataset.delmat); }); });
+$("#sSecForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const wt = parseSec($("#sSecIn").value);
+  if (!wt) { toast("Enter a size as width x thickness, like 240x45."); return; }
+  const key = fmt(wt[0]) + "x" + fmt(wt[1]);
+  cfgChange(() => { if (!S.cfg.sections.includes(key)) S.cfg.sections.push(key); });
+  $("#sSecIn").value = "";
+});
+$("#sSec").addEventListener("click", e => { const b = e.target.closest("[data-delsec]"); if (b) cfgChange(() => { S.cfg.sections = S.cfg.sections.filter(s => s !== b.dataset.delsec); }); });
+$("#sThkForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = num($("#sThkIn").value);
+  if (!t) { toast("Enter a thickness in mm, like 25."); return; }
+  cfgChange(() => { if (!S.cfg.sheetThk.includes(t)) { S.cfg.sheetThk.push(t); S.cfg.sheetThk.sort((a, b) => a - b); } });
+  $("#sThkIn").value = "";
+});
+$("#sThk").addEventListener("click", e => { const b = e.target.closest("[data-delthk]"); if (b) cfgChange(() => { S.cfg.sheetThk = S.cfg.sheetThk.filter(t => String(t) !== b.dataset.delthk); }); });
+$("#sLocForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const l = $("#sLocIn").value.trim(); if (!l) return;
+  cfgChange(() => { if (!S.cfg.locations.includes(l)) S.cfg.locations.push(l); });
+  $("#sLocIn").value = "";
+});
+$("#sLoc").addEventListener("click", e => { const b = e.target.closest("[data-delloc]"); if (b) cfgChange(() => { S.cfg.locations = S.cfg.locations.filter(l => l !== b.dataset.delloc); }); });
+
+$("#exportBtn").addEventListener("click", () => {
+  try {
+    const blob = new Blob([toCSV()], {type:"text/csv"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "offcuts-" + today() + ".csv";
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  } catch (e) { toast("Download isn't available here. Use Copy CSV instead."); }
+});
+$("#copyBtn").addEventListener("click", async () => {
+  const ta = $("#exportText"); const csv = toCSV();
+  try { await navigator.clipboard.writeText(csv); toast("CSV copied"); }
+  catch (e) { ta.value = csv; ta.hidden = false; ta.focus(); ta.select(); toast("Text selected. Copy it with your keyboard or long-press."); }
+});
+$("#importFile").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { $("#importText").value = String(r.result || ""); S.importPlan = planImport(r.result || ""); renderImportMsg(); };
+  r.onerror = () => toast("That file couldn't be read. Try saving it as CSV again.");
+  r.readAsText(f);
+});
+$("#importCheck").addEventListener("click", () => { S.importPlan = planImport($("#importText").value); renderImportMsg(); });
+$("#importMsg").addEventListener("click", e => {
+  if (e.target.closest("#importGo")) run(runImport);
+  if (e.target.closest("#importCancel")) { S.importPlan = null; renderImportMsg(); }
+});
+
+// sheet
+$("#sheetHost").addEventListener("click", e => {
+  if (e.target.matches("[data-scrim]") || e.target.closest("[data-close]")) { closeSheet(); renderAll(); return; }
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  const p = S.pieces.get(S.sel);
+  const act = a.dataset.act;
+  if (act === "cut" || act === "rip" || act === "edit") { S.mode = act; S.confirmDel = false; renderSheet(); return; }
+  if (act === "back") { S.mode = "view"; renderSheet(); return; }
+  if (act === "del") { S.confirmDel = true; renderSheet(); return; }
+  if (act === "delNo") { S.confirmDel = false; renderSheet(); return; }
+  if (act === "delYes") { run(deletePiece); return; }
+  if (act === "undoRip") { run(undoRip); return; }
+  if (!p) return;
+  if (act === "used") run(() => setStatus(p, "used", p.label + " marked used up"));
+  else if (act === "restore") run(() => setStatus(p, "available", p.label + " back in stock"));
+  else if (act === "reserve") run(() => setStatus(p, p.status === "reserved" ? "available" : "reserved", p.status === "reserved" ? p.label + " unreserved" : p.label + " reserved"));
+});
+$("#sheetHost").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target.dataset.form;
+  if (f === "cut") run(saveCut);
+  else if (f === "rip") run(saveRip);
+  else if (f === "edit") run(saveEdit);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.sel != null) { closeSheet(); renderAll(); } });
+window.addEventListener("storage", e => { if (e.key === LS_KEY) { load(); renderAll(); } });
+
+/* ---------- start ---------- */
+load();
+renderAll();
+})();
+</script>
+</body>
+</html>
